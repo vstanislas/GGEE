@@ -33,7 +33,7 @@ The two functions `simGeno` and `simPheno` allows to respectively simulate genot
 ```{r, fig.show='hold'}
 	
 library(GGEE)
-sizeGenesMain <- c(6,2) # 2 genes with 6 SNPs 
+sizeGenesMain <- rep(6,2) # 2 genes with 6 SNPs 
 sizeGenesPair <- rep(6,2) # 2 genes with 6 SNPs 
 sizeGenesRemain <- rep(6,4) # 4 genes with 6 SNPs
 SameMainPair <- FALSE  # Specify that genes with interaction effects will not have main effects 
@@ -87,7 +87,7 @@ for the interactions, in the first model  `"SNPproduct"`,  all the causal SNPs f
 # possible values for coef Beta or Gamma
 pvBeta <- c(2,2) 
 pvGamma <-  c(2,2)
-r2 <- 0.2
+r2 <- 0.4
 
 Pheno <- simPheno(X=Geno$X, listGenes=Geno$listGenesSNP, MainEff=Geno$MainEff, GenePair=Geno$GenePair,
         model="SNPproduct", pvBeta=pvBeta, pvGamma=pvGamma, r2=r2, causalSNPnb=causalSNPnb)
