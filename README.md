@@ -15,6 +15,6 @@ devtools::install_github("vstanislas/GGEE")
 
 
 ## Examples and descriptions
-A detailled examples can be find in GGEEvignette.pdf
+A detailled example can be find in GGEEvignette.pdf
 
 
