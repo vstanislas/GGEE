@@ -1,0 +1,160 @@
+---
+title: "GGEE Vignette"
+author: "Virginie Stanislas"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GGEEVignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+## 1) Introduction
+The `GGEE` package implement the "Gene-Gene Eigen Epistasis" approach to detect epistasis at the gene level in genome wide association studies (GWAS). 
+This approach compute interaction variables for each gene pair then uses a penalized regression method based on group lasso to select the significant main or interaction effects.
+
+The two main functions of this package are `BuiltEpiVar` and `GLmodel`. `BuiltEpiVar` allows to generate interaction variables under four different interaction variable modeling approaches. The Eigen-epistasis approach find for each gene pair a component defined as the linear combination of gene markers (SNPs) having the highest correlation with the phenotype.  The three other modeling approaches are inspired by previous literature proposals, they compute interaction variable using: Principal Component Analysis (PCA), Partial Least squares (PLS) or Canonical-Correlation Analysis (CCA).
+`GLmodel` fits a group lasso model on the genetic data set enhanced by interaction variables then uses a screen and clean procedure in order to compute p-values for each group. A group is either made with the SNPs from a given gene or of interaction terms relative to a given gene-pair interaction. 
+
+Additionally, the package allows to generate genotype and phenotype data under two phenotypic models.
+
+## 2) Generating genotype and phenotype data
+The `GGEE` package allows to generate gene structured data and associated continuous phenotype according to the model :
+$$
+\boldsymbol{y}=  \boldsymbol{X}^T \boldsymbol{\beta} + \boldsymbol{Z}^T \boldsymbol{\gamma} + \boldsymbol{\epsilon}
+$$
+Where  $\boldsymbol{y} \in \mathbb{R}^n$ denotes the vector of trait values for $n$ individuals, $\mathbf{X}  \in \{1,2,3\}^{n \times   p}$ represents the SNP matrix,  $\mathbf{Z}$ the matrix gathering interaction variables and $\boldsymbol{\epsilon} \in \mathbb{R}^n$ a gaussian error term.
+The columns of $\mathbf{X}$ are structured on $G$ non overlapping genes. Each gene is described by a given number of SNPs $p_g$ where $\sum_g p_g=p$. The matrix of interaction $\mathbf{Z}$ is structured into $G(G-1)/2$ submatrices each submatrice being the group of interaction variables for a specific pair of genes.
+
+The two functions `simGeno` and `simPheno` allows to respectively simulate genotype and phenotype data. 
+
+
+
+
+```{r, fig.show='hold'}
+	
+library(GGEE)
+sizeGenesMain <- c(6,2) # 2 genes with 6 SNPs 
+sizeGenesPair <- rep(6,2) # 2 genes with 6 SNPs 
+sizeGenesRemain <- rep(6,4) # 4 genes with 6 SNPs
+SameMainPair <- FALSE  # Specify that genes with interaction effects will not have main effects 
+N<- 600
+causalSNPnb <- 2
+corr <- 0.8
+MAFcausalSNP=0.2
+
+
+Geno <- simGeno(N=N, corr=corr, sizeGenesMain=sizeGenesMain, sizeGenesPair=sizeGenesPair,
+     sizeGenesRemain=sizeGenesRemain, SameMainPair=SameMainPair, MAFcausalSNP=MAFcausalSNP,
+     causalSNPnb=causalSNPnb)
+     
+```
+With these parameters the function `simGeno` simulate a data set of 6 genes, each one composed of 6 SNPs, for 600 individuals. The 2 first genes are considered to have main effects and the gene 3 and gene 4 to have an interaction effect. For the four causal genes their 2 first SNPs are considered as causal variants. Rather than a defined number of causal SNPs by causal gene, it is possible to use a portion of causal SNPs with the option `causalSNPportion`. In this case the option `causalSNPnb` has to be `NULL`. In both cases, the SNPs considered as causal are the first listed in the gene. The MAF of each SNP is randomly set between the values `minMAF` and `maxMaf` (by befault `minMAF=0.05` and `maxMaf=0.5`). For the causal SNPs the MAF value correspond to `MAFcausalSNP`. The correlation between SNPs belonging to the same gene is set to `corr=0.8`.
+
+The output of `Geno` contain the following elements :
+
+* The $600 \times 48$ genotype matrix $X$
+* The list `listGenesSNP`  that indicate the names of the SNPs composing each gene
+* The vectors `MainEff` and `GenePair` which give the names of genes having respectively main or interaction effects. The size of the vector `GenePair` is an even number, the pairs being defined with genes successively taken two by two along the vector.
+* The vector `MAF` which give the minor allele frequency observed for each simulated SNP
+
+```{r}
+Geno$X[1:5,1:8]
+Geno$listGenesSNP
+Geno$MainEff
+Geno$GenePair
+Geno$MAF
+```
+Once the genotype matrix obtained, phenotype values can be simulated through the function `simPheno`. The function takes as parameters:
+
+* the outputs of the `simGeno` function,
+* two vectors of possible values for coefficients $\beta$ and $\gamma$,
+* the number or portion of causal SNPs to consider by gene (It has to be the same value than the one chosen for `simGeno`),
+* a $r^2$ value that calibrate the difficulty of the problem,
+* a value for the intercept $\beta_0$ (default $\beta_0=0$),
+* the model to consider to simulate interaction effects:
+	+ `"SNPproduct"` :
+		$Y_i = \beta_0 + \sum_{g} \beta_{g}   \left( \sum_{k  \in \mathcal{C}}  X_{ik}^g  \right) + \sum_{rs}   \gamma_{rs}  \left(  \sum_{(j,k) \in \mathcal{C}^2 } X_{ij}^r X_{ik}^s \right)  + \epsilon_i$
+		
+	+ `"PCproduct"`:
+		$Y_i = \beta_0 + \sum_{g} \beta_{g}    \left( \sum_{k  \in \mathcal{C}}  X_{ik}^g \right)  + \sum_{rs}   \gamma_{rs}   C_{i1}^r C_{i1}^s  + \epsilon_i$
+
+where $\mathcal{C}$ and $\mathcal{C}^2$ are respectively the set of causal SNPs and causal interactions, and $\epsilon_i$ a random Gaussian variable.  For each causal gene $g$ a coefficient $\beta_{g}$ is  assigned to the standardized sum of the
+causal SNPs.
+for the interactions, in the first model  `"SNPproduct"`,  all the causal SNPs from a causal pair $(r,s)$ are pairwise multiplied and the interaction of the causal pair is represented by the standardized sum of the products. In the second model  `"PCproduct"`,  the interaction is represented by the standardized product of the first PCA component $\boldsymbol{C}_{.1}^r$ of gene $r$ and the first PCA component $\boldsymbol{C}_{.1}^s$ of gene $s$. The computation of PCA components is realized on the whole gene and not only on the causal SNPs.
+
+```{r, fig.show='hold'}	
+
+# possible values for coef Beta or Gamma
+pvBeta <- c(2,2) 
+pvGamma <-  c(2,2)
+r2 <- 0.2
+
+Pheno <- simPheno(X=Geno$X, listGenes=Geno$listGenesSNP, MainEff=Geno$MainEff, GenePair=Geno$GenePair,
+        model="SNPproduct", pvBeta=pvBeta, pvGamma=pvGamma, r2=r2, causalSNPnb=causalSNPnb)
+```
+The outputs of the function `simPheno` includes
+
+* the vector of phenotype continuous values $y$,
+* the matrix $G$ of the simulated main effects, each column represent one causal gene and correspond to the standardized sum of its causal SNPs,
+* the matrix $GG$ of the simulated interaction effects, each column represent one causal interaction defined depending of the selected model,
+* values for the coefficient of determination $R^2$ when considering the model containing only simulated interaction effects `R2I` or  only simulated main effects `R2S` or both simulated main and interaction effects `R2T`,
+* a list `caract` with the characteristic of the simulation. The information about the part of the coefficient of determination $R^2$ hat can be attributed to either interaction effects $p_{R^2_I}=\dfrac{R^2_I}{R^2_T}$ or main effects $p_{R^2_M}=\dfrac{R^2_M}{R^2_T}$ is given. 
+
+```{r, fig.show='hold'}	
+head(Pheno$y)
+head(Pheno$G)
+head(Pheno$GG)
+Pheno[c("R2T","R2I","R2S")]
+Pheno$caract
+
+```
+## 3) The G-GEE method
+Once genotype and phenotype data are obtained we can apply the G-GEE approach to seek for interaction effects. The first step is to create interaction variables from each gene couple, the second is to test for potential main or interaction effects.
+
+Interaction variable modeling can be done with the function `BuiltEpiVar`. The function takes as parameters the matrix of genotype $X$, the vector of phenotypic traits $y$, a list `listGenesSNP`  that indicate the names of the SNPs composing each gene and `nbcomp` the number of components to consider to compute interaction variables. Four different methods can be use to create interaction variables :
+
+* `"GGEE"` which find for each gene pair its Eigen-epistasis Component that maximize the correlation between all possible SNP-SNP interactions and the phenotype. 
+* `"PCA"` which first compute PCA on each gene of the pair and represent the interaction with component products.
+* `"PLS"` interaction variables are defined by components that maximize the covariance between the two genes and the phenotype.
+* `"CCA"` interaction variables are here represent by the product of pairwise components obtained by a canonical correlation analysis on the gene pair.
+
+Here we show an example using `"GGEE"`option. As this method can compute only one interaction by gene couple, the parameter `nbcomp` doesn't need to be used. 
+
+```{r}
+Int <- BuiltEpiVar(Geno$X, Pheno$y, method="GGEE", listGenesSNP=Geno$listGenesSNP)
+```
+
+`Int` is a list composed of the interaction variable matrix `XBet` and a vector `interLength` indicating the number of interaction variables for each couple.
+
+```{r}
+head(Int$XBet)
+Int$interLength
+
+```
+
+Test for potential main or interaction effects is done with the function `GLmodel`. Parameters include `nlambda`, the length of the grid of possible lambda values, `limitLambda` the number of the largest lambda values among the grid to consider for the cross validation and `lambda.cri` the criteria for lambda selection (minimum or oneSE value).
+
+```{r}
+res <- GLmodel(Geno$X, Pheno$y, Int$XBet, interLength=Int$interLength,
+     listGenesSNP=Geno$listGenesSNP, nlambda=100, limitLambda=25, lambda.cri="min")
+
+```
+
+The outputs of `GLmodel` contain:
+
+* the matrix `res_GL.min` giving for each SNP an interaction variable the group lasso coefficient values at the optimal lambda level,
+* the matrix `pval.adj` that give adjusted pvalues of each variable with nonzero group lasso coefficient. 
+
+
+```{r}
+res
+```
+
+The `GGEE` package contains a plot function `plot.GLmodel`. The function takes as parameter a `GLmodel` object and provides a representation of cross validation results. It depicts the value of the cross validation error for each lambda considered and thus allows to identify the optimal lambda values depending of the criteria of interest (minimal or oneSE). This plot allows to verify that enough lambda values was considered for the cross validation. If the curve doesn't show a clear minimal value the parameter `limitLambda` of the `GLmodel` has to be enlarged.
+
+```{r,fig.width=7, fig.height=7}
+
+plotGLmodel(res)
+
+```
+
