@@ -19,3 +19,5 @@ RoxygenNote: 5.0.1
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr
+URL: https://github.com/vstanislas/GGEE
+BugReports: http://github.com/vstanislas/GGEE/issues
