@@ -9,10 +9,10 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 ## 1) Introduction
-The `GGEE` package implement the "Gene-Gene Eigen Epistasis" approach to detect epistasis at the gene level in genome wide association studies (GWAS). 
+The `GGEE` package implements the "Gene-Gene Eigen Epistasis" approach to detect epistasis at the gene level in genome wide association studies (GWAS). 
 This approach compute interaction variables for each gene pair then uses a penalized regression method based on group lasso to select the significant main or interaction effects.
 
-The two main functions of this package are `BuiltEpiVar` and `GLmodel`. `BuiltEpiVar` allows to generate interaction variables under four different interaction variable modeling approaches. The Eigen-epistasis approach find for each gene pair a component defined as the linear combination of gene markers (SNPs) having the highest correlation with the phenotype.  The three other modeling approaches are inspired by previous literature proposals, they compute interaction variable using: Principal Component Analysis (PCA), Partial Least squares (PLS) or Canonical-Correlation Analysis (CCA).
+The two main functions of this package are `BuiltEpiVar` and `GLmodel`. `BuiltEpiVar` allows to calculate interaction variables under four different interaction variable modeling approaches. The Eigen-epistasis approach find for each gene pair a component defined as the linear combination of gene markers (SNPs) having the highest correlation with the phenotype.  The three other modeling approaches are inspired by previous literature proposals, they compute interaction variable using: Principal Component Analysis (PCA), Partial Least squares (PLS) or Canonical-Correlation Analysis (CCA).
 `GLmodel` fits a group lasso model on the genetic data set enhanced by interaction variables then uses a screen and clean procedure in order to compute p-values for each group. A group is either made with the SNPs from a given gene or of interaction terms relative to a given gene-pair interaction. 
 
 Additionally, the package allows to generate genotype and phenotype data under two phenotypic models.
