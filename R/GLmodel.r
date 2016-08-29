@@ -16,37 +16,92 @@
 #' @param nbcomp number of components to consider to built interaction variables for "PCA", "PLS" and "CCA" methods (2 by default).
 # @param seuilVarPCA an optional threshold of percentage of variance for the "PCA" method, if noticed the interaction variables are built with the PCA component that explain at least this threshold.
 #' @return Returns a list including:
-#' \item{XBet}{a matrix where columns are interaction variables and rows are samples.}
+#' \item{XInt}{a matrix where columns are interaction variables and rows are samples.}
 #' \item{interLength}{a vector that indicate the number of interaction variable for each gene couple.}
 #' @export
-BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2) {
+BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2, idSubs) {
  
  	genesLength <- sapply(listGenesSNP, function(x) length(x))
     genes <- names(listGenesSNP)
     groupsGenes <- unlist(lapply(names(genesLength), function(x) rep(x, genesLength[x])))
-    
-    
+
     if (method == "CCA") {
-        bet <- between.mat(X = X, G = groupsGenes, nbcomp = nbcomp)
-        XBet <- as.matrix(bet$XBet)
-        interLength <- bet$interLength
+        CCA.L <- CCAGenes(X = X, G = groupsGenes, nbcomp = nbcomp, idSubs)
+        XIntTrain <- CCA.L$IntTrain
+        XIntTest <- CCA.L$IntTest
+        interLength <- CCA.L$interLength
+        nb_int <-NA
     } else if (method == "PCA") {
-        PCA.L <- PCAGenes(X = X, listGenesSNP = listGenesSNP, nbcomp = nbcomp)
-        XBet <- PCA.L$I
+        PCA.L <- PCAGenes(X = X, listGenesSNP = listGenesSNP, nbcomp = nbcomp, idSubs)
+        XIntTrain <- PCA.L$IntTrain
+        XIntTest <- PCA.L$IntTest
         interLength <- PCA.L$interLength
+        nb_int <-NA
     } else if (method == "PLS") {
-        PLS.L <- PLSGenes(X = X, Y, listGenesSNP = listGenesSNP, nbcomp = nbcomp)
-        XBet <- PLS.L$Int
+        PLS.L <- PLSGenes(X = X, Y, listGenesSNP = listGenesSNP, nbcomp = nbcomp, idSubs)
+        XIntTrain <- PLS.L$IntTrain
+        XIntTest <- PLS.L$IntTest
         interLength <- PLS.L$interLength
+        nb_int <-NA
     } else if (method == "GGEE") {
-        GGEE.L <- GGEE(X=X, Y, listGenesSNP=listGenesSNP)
-        XBet <- GGEE.L$Int
+        GGEE.L <- GGEE(X=X, Y, listGenesSNP=listGenesSNP, idSubs)
+        XIntTrain <- GGEE.L$IntTrain
+        XIntTest <- GGEE.L$IntTest
         interLength <- GGEE.L$interLength
+        nb_int <- GGEE.L$nb_int
+    } else if (method == "RF") {
+        RF.L <- RF(X=X, Y, listGenesSNP=listGenesSNP, idSubs)
+        XIntTrain <- RF.L$IntTrain
+        XIntTest <- RF.L$IntTest
+        interLength <- RF.L$interLength
+        nb_int <- RF.L$nb_int
+    } else if (method == "RFW") {
+        RFW.L <- RFW(X=X, Y, listGenesSNP=listGenesSNP, idSubs)
+        XIntTrain <- RFW.L$IntTrain
+        XIntTest <- RFW.L$IntTest
+        interLength <- RFW.L$interLength
+        nb_int <- RFW.L$nb_int
+    } else if (method == "SVMpol") {
+        SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial")
+        XIntTrain <- SVM.L$IntTrain
+        XIntTest <- SVM.L$IntTest
+        interLength <- SVM.L$interLength
+        nb_int <- SVM.L$nb_int
+    } else if (method == "SVMpol5") {
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial", degree=5)
+      XIntTrain <- SVM.L$IntTrain
+      XIntTest <- SVM.L$IntTest
+      interLength <- SVM.L$interLength
+      nb_int <- SVM.L$nb_int
+    } else if (method == "SVMlin") {
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="linear")
+      XIntTrain <- SVM.L$IntTrain
+      XIntTest <- SVM.L$IntTest
+      interLength <- SVM.L$interLength
+      nb_int <- SVM.L$nb_int
+   } else if (method == "SVMrad") {
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="radial")
+      XIntTrain <- SVM.L$IntTrain
+      XIntTest <- SVM.L$IntTest
+      interLength <- SVM.L$interLength
+      nb_int <- SVM.L$nb_int
+    } else if (method == "BOOST") {
+      BOOST.L <- BOOST(X=X, Y, listGenesSNP=listGenesSNP)
+      XIntTrain <- BOOST.L$IntTrain
+      XIntTest <- BOOST.L$IntTest
+      interLength <- BOOST.L$interLength
+      nb_int <- BOOST.L$nb_int
+    } else if (method == "NN") {
+      NN.L <- NN(X=X, Y, listGenesSNP=listGenesSNP)
+      XIntTrain <- NN.L$IntTrain
+      XIntTest <- NN.L$IntTest
+      interLength <- NN.L$interLength
+      nb_int <- NN.L$nb_int
     } else {
         warning("Interaction variables construction method unknown")
     }
     
-  list(XBet = XBet, interLength=interLength)
+  list(XIntTrain = XIntTrain, XIntTest = XIntTest, interLength=interLength, nb_int=nb_int, idSubs=idSubs)
 
 }
 
@@ -68,23 +123,25 @@ BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2) {
 #' \item{pval.adj}{a matrix where row are single marker or interaction variables for which res_GL.min is no equal to zero and column the pvalues obtained after the cleaning procedure and adjusted with Benjamini & Hochberg correction.}
 #' \item{vc}{a list with result of the cross validation.}
 #' @export
-GLmodel <- function(X, Y, XBet, interLength, listGenesSNP, nlambda=100, limitLambda=30, lambda.cri="min") {
+GLmodel <- function(X, Y, XIntTrain, XIntTest, idSubs, interLength, listGenesSNP, nlambda=100, limitLambda=30, lambda.cri="min") {
     
    genesLength <- sapply(listGenesSNP, function(x) length(x))
    genes <- names(listGenesSNP)
     
            
-    XwBet <- cbind(scale(X, center = TRUE, scale = TRUE), scale(XBet, center = TRUE, 
-        scale = TRUE))
+    XwIntTrain <- cbind(scale(X[idSubs$idTrain,], center = TRUE, scale = TRUE), scale(XIntTrain, center = TRUE,
+                                                                                      scale = TRUE))
+    XwIntTest <- cbind(scale(X[idSubs$idTest,], center = TRUE, scale = TRUE), scale(XIntTest, center = TRUE, 
+                                                                                      scale = TRUE))
     nbInt <- length(genes) * (length(genes) - 1)/2
-    groups.wBet <- c(rep(seq(genes), sapply(genes, function(x) genesLength[x])), 
+    groups.wInt <- c(rep(seq(genes), sapply(genes, function(x) genesLength[x])), 
         rep((length(genes) + 1):(nbInt + length(genes)), interLength))
-    namesgroups.wBet <- c(rep(genes, sapply(genes, function(x) genesLength[x])), 
+    namesgroups.wInt <- c(rep(genes, sapply(genes, function(x) genesLength[x])), 
         rep(names(interLength), interLength))
     
     
-    subs <- split(1:dim(XwBet)[1], 1:2)
-    vc <- valid.crois(X = XwBet[subs[[1]], ], y = Y[subs[[1]]], groups = groups.wBet, 
+   
+    vc <- valid.crois(X = XwIntTrain, y = Y[idSubs$idTrain], groups = groups.wInt, 
         K = 10, nlambda = nlambda, limitLambda = limitLambda)
     
     if (lambda.cri =="min"){
@@ -95,33 +152,34 @@ GLmodel <- function(X, Y, XBet, interLength, listGenesSNP, nlambda=100, limitLam
     }
     
     if (all(Y == 1 | Y == 0)) {
-        coefs.min <- grplassoLog(X = XwBet[subs[[1]], ], y = Y[subs[[1]]], lambda = lambda, 
-            groups = groups.wBet)
+        coefs.min <- grplassoLog(X = XwIntTrain, y = Y[idSubs$idTrain], lambda = lambda, 
+            groups = groups.wInt)
     } else {
-        coefs.min <- grplassoLin(X = XwBet[subs[[1]], ], y = Y[subs[[1]]], lambda = lambda, 
-            groups = groups.wBet)
+        coefs.min <- grplassoLin(X = XwIntTrain, y = Y[idSubs$idTrain], lambda = lambda, 
+            groups = groups.wInt)
     }
     
     
      res_GL.min <- as.matrix(coefs.min$coefs)
-     rownames(res_GL.min) <- namesgroups.wBet
+     rownames(res_GL.min) <- namesgroups.wInt
     colnames(res_GL.min) <- "Coefs"
     
     if (sum(res_GL.min) == 0) {
         clean.grp <- NULL
         pval <- c()
     } else {
-        clean.grp <- ridgeAdap::cleaning.ridge(XwBet[subs[[2]], ], Y[subs[[2]]], lambda1 = lambda, 
-            beta = coefs.min$coefs, center = FALSE, group = groups.wBet, penalty = "grplasso")
+        clean.grp <- ridgeAdap::cleaning.ridge(XwIntTest, Y[idSubs$idTest], lambda1 = lambda, 
+            beta = coefs.min$coefs, center = FALSE, group = groups.wInt, penalty = "grplasso")
         pval <- clean.grp$pval
     }
     
     namesGroups <- c(genes, names(interLength))
     pval.adj <- as.matrix(p.adjust(pval, "BH"))
-    dimnames(pval.adj) <- list(namesGroups[as.numeric(names(pval))], "pval.adj")
+    id_varSign <- as.numeric(names(pval))
+    dimnames(pval.adj) <- list(namesGroups[id_varSign], "pval.adj")
+
     
-    
-    results <- list(res_GL.min = res_GL.min, pval.adj = pval.adj, vc = vc)
+    results <- list(res_GL.min = res_GL.min, pval.adj = pval.adj, vc = vc, id_varSign=id_varSign)
     class(results)<-"GLmodel"
 	return(results)
 }

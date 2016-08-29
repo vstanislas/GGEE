@@ -7,13 +7,15 @@ Author: Virginie Stanislas
 Maintainer: Virginie Stanislas <virginie.stanislas@math.cnrs.fr>
 Description: Implementation of the group lasso Gene-Gene Eigen Epistasis (G-GEE) method for detecting epistasis at the gene level. The proposed functions allow to compute interaction variables for each pair and to fit a general model with a Group Lasso penalty.
 License: GPL (>= 2)
-Imports: 
+Imports:
     Rcpp (>= 0.12.3),
     grplasso,
     FactoMineR,
     bootstrap,
     pls,
-    ridgeAdap
+    ridgeAdap,
+    randomForest,
+    e1071
 LinkingTo: Rcpp, RcppArmadillo
 RoxygenNote: 5.0.1
 Suggests: knitr,

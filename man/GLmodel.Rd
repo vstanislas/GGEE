@@ -4,15 +4,13 @@
 \alias{GLmodel}
 \title{Fonction to add interaction variable and to fit a group lasso model.}
 \usage{
-GLmodel(X, Y, XBet, interLength, listGenesSNP, nlambda = 100,
-  limitLambda = 30, lambda.cri = "min")
+GLmodel(X, Y, XIntTrain, XIntTest, idSubs, interLength, listGenesSNP,
+  nlambda = 100, limitLambda = 30, lambda.cri = "min")
 }
 \arguments{
 \item{X}{a genotype matrix where columns are genetic markers and rows are samples.}
 
 \item{Y}{phenotype values can be logical (1/0) or numericGLmodel.}
-
-\item{XBet}{a matrix where columns are interaction variables and rows are samples.}
 
 \item{interLength}{a vector that indicate the number of interaction variable for each gene couple.}
 
@@ -23,6 +21,8 @@ GLmodel(X, Y, XBet, interLength, listGenesSNP, nlambda = 100,
 \item{limitLambda}{number of lambda values among the grid to consider for the cross validation (30 by default).}
 
 \item{lambda.cri}{criteria for lambda selection are "min" or "oneSE" ("min" by default).}
+
+\item{XBet}{a matrix where columns are interaction variables and rows are samples.}
 }
 \value{
 Returns a list including:

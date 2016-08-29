@@ -4,7 +4,7 @@
 \alias{BuiltEpiVar}
 \title{Fonction to create interaction variable.}
 \usage{
-BuiltEpiVar(X, Y, method, listGenesSNP, nbcomp = 2)
+BuiltEpiVar(X, Y, method, listGenesSNP, nbcomp = 2, idSubs)
 }
 \arguments{
 \item{X}{a genotype matrix where columns are genetic markers and rows are samples.}
@@ -25,7 +25,7 @@ BuiltEpiVar(X, Y, method, listGenesSNP, nbcomp = 2)
 }
 \value{
 Returns a list including:
-\item{XBet}{a matrix where columns are interaction variables and rows are samples.}
+\item{XInt}{a matrix where columns are interaction variables and rows are samples.}
 \item{interLength}{a vector that indicate the number of interaction variable for each gene couple.}
 }
 \description{
