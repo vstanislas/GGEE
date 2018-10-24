@@ -13,6 +13,12 @@ The package can be installed from github:
 devtools::install_github("vstanislas/GGEE")
 ```
 
+GGEE uses several functions from the package ridgeAdap which can also be installed from github:
+
+```{r}
+devtools::install_github("jbecu/ridgeAdap")
+```
+
 Some functions of GGEE use C++ code. On Linux compilation can be interupt depending on the g++ version. The solution is to create a .R/Makevars file in your home directory that contains:
 ```{r}
 CXXFLAGS= -std=c++11
