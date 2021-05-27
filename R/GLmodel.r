@@ -62,37 +62,37 @@ BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2, idSubs) {
         interLength <- RFW.L$interLength
         nb_int <- RFW.L$nb_int
     } else if (method == "SVMpol") {
-        SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial")
+        SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial", idSubs=idSubs)
         XIntTrain <- SVM.L$IntTrain
         XIntTest <- SVM.L$IntTest
         interLength <- SVM.L$interLength
         nb_int <- SVM.L$nb_int
     } else if (method == "SVMpol5") {
-      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial", degree=5)
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="polynomial", degree=5, idSubs=idSubs)
       XIntTrain <- SVM.L$IntTrain
       XIntTest <- SVM.L$IntTest
       interLength <- SVM.L$interLength
       nb_int <- SVM.L$nb_int
     } else if (method == "SVMlin") {
-      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="linear")
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="linear", idSubs=idSubs)
       XIntTrain <- SVM.L$IntTrain
       XIntTest <- SVM.L$IntTest
       interLength <- SVM.L$interLength
       nb_int <- SVM.L$nb_int
    } else if (method == "SVMrad") {
-      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="radial")
+      SVM.L <- SVMmet(X=X, Y, listGenesSNP=listGenesSNP, kernel="radial", idSubs=idSubs)
       XIntTrain <- SVM.L$IntTrain
       XIntTest <- SVM.L$IntTest
       interLength <- SVM.L$interLength
       nb_int <- SVM.L$nb_int
     } else if (method == "BOOST") {
-      BOOST.L <- BOOST(X=X, Y, listGenesSNP=listGenesSNP)
+      BOOST.L <- BOOST(X=X, Y, listGenesSNP=listGenesSNP, idSubs)
       XIntTrain <- BOOST.L$IntTrain
       XIntTest <- BOOST.L$IntTest
       interLength <- BOOST.L$interLength
       nb_int <- BOOST.L$nb_int
     } else if (method == "NN") {
-      NN.L <- NN(X=X, Y, listGenesSNP=listGenesSNP)
+      NN.L <- NN(X=X, Y, listGenesSNP=listGenesSNP, idSubs)
       XIntTrain <- NN.L$IntTrain
       XIntTest <- NN.L$IntTest
       interLength <- NN.L$interLength

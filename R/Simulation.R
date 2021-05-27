@@ -87,6 +87,9 @@ simGeno <- function(N = 600, corr = 0.8, sizeGenesMain, sizeGenesPair, sizeGenes
   MAFobs <- apply(X, 2, function(x) (table(x)[2] + 2 * table(x)[3])/(N * 2))
   names(MAFobs) <- as.vector(unlist(listGenesSNP))
   
+  
+  
+  
   if (is.null(sizeGenesMain)) {
     MainEff <- NULL
     idMainEff <- NULL
@@ -105,9 +108,13 @@ simGeno <- function(N = 600, corr = 0.8, sizeGenesMain, sizeGenesPair, sizeGenes
       if (AllMainPair == TRUE) {
         MainEff <- c(MainEff, GenePair)
         idMainEff <- c(idMainEff, idGenePair)
+        sizeGenesMain <- c(sizeGenesMain, sizeGenesPair)
+        
       } else {
         MainEff <- c(MainEff, GenePair[seq(1, length(GenePair), 2)])
         idMainEff <- c(idMainEff, idGenePair[seq(1, length(idGenePair), 2)])
+        sizeGenesMain <- c(sizeGenesMain, sizeGenesPair[seq(1, length(GenePair), 2)])
+        
       }
       
       
@@ -117,16 +124,32 @@ simGeno <- function(N = 600, corr = 0.8, sizeGenesMain, sizeGenesPair, sizeGenes
   } else {
     if (is.null(sizeGenesPair)) {
       GenePair <- NULL
+      idGenePair <- NULL
     } else {
       idGenePair <- (length(sizeGenesMain) + 1):(length(sizeGenesMain) + length(sizeGenesPair))
       GenePair <- names(listGenesSNP[idGenePair])
     }
   }
   
+  if (is.null(sizeGenesRemain)) {
+    GeneRemain <- NULL
+    idGeneRemain <- NULL
+  } else {
+    if (is.null(sizeGenesMain)&is.null(sizeGenesPair)){
+      GeneRemain <- names(listGenesSNP)
+    }else{
+      GeneRemain <- names(listGenesSNP[-c(idMainEff, idGenePair)])
+    }
+  }
+  
+  names(sizeGenesMain) <- MainEff 
+  names(sizeGenesPair) <- GenePair
+  names(sizeGenesRemain) <- GeneRemain
+  
+  sizeGenes <- list(sizeGenesMain=sizeGenesMain,sizeGenesPair=sizeGenesPair,sizeGenesRemain=sizeGenesRemain)
   
   
-  
-  list(X = X, listGenesSNP = listGenesSNP, MainEff = MainEff, GenePair = GenePair, 
+  list(X = X, listGenesSNP = listGenesSNP, MainEff = MainEff, GenePair = GenePair, GeneRemain=GeneRemain, sizeGenes=sizeGenes,
        MAF = MAFobs)
 }
 
@@ -148,7 +171,8 @@ simGeno <- function(N = 600, corr = 0.8, sizeGenesMain, sizeGenesPair, sizeGenes
 #' \item{MainEff}{a vector containing the names of genes having main effects.}
 #' \item{GenePair}{a vector containing the names of genes having interaction effects.}
 #' @export
-simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRemainNb, sizeGenesMain, sizeGenesPair, sizeGenesRemain, SameMainPair, AllMainPair=TRUE, sampling="gene"){
+simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRemainNb, sizeGenesMain, sizeGenesPair, 
+                         sizeGenesRemain, SameMainPair, AllMainPair=TRUE, sampling="gene", GenesLengthMin=NULL, GenesActifLengthMin=NULL){
   
   genesNames <- names(listGenesData)
   genesLength <- sapply(listGenesData, function(x) length(x))
@@ -187,6 +211,10 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
     
   }else{
     
+    if(is.null(GenesActifLengthMin)){
+      GenesActifLengthMin <- GenesLengthMin
+    } 
+    
     # With GenesMainNb and GenesPairNb  
     #Genes Main
     if(GenesMainNb == 0){
@@ -198,9 +226,16 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
     }else{
       if(sampling=="gene"){
         idGenes <- seq(length(genesNames))
+        if(!is.null(GenesActifLengthMin)){
+          idSmallGenes <- which(genesLength< GenesActifLengthMin)
+          idGenes <- idGenes[-idSmallGenes]
+        }
         idMainEff <- sample(idGenes,GenesMainNb)
       }else if(sampling=="size"){
         sizeGenes <- unique(genesLength)
+        if(!is.null(GenesActifLengthMin)){
+          sizeGenes <- sizeGenes[which(sizeGenes>= GenesActifLengthMin)]
+        }
         sizeGenesMain <- sample(sizeGenes, GenesMainNb, replace = TRUE)
         selection <- selectGenesBySize(sizeGenesMain, genesNames, genesLength)
         idMainEff <- selection$idSelectedGenes
@@ -219,9 +254,16 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
     }else{
       if(sampling=="gene"){
         idGenes <- seq(length(genesNames2))
+        if(!is.null(GenesActifLengthMin)){
+          idSmallGenes <- which(genesLength2< GenesActifLengthMin)
+          idGenes <- idGenes[-idSmallGenes]
+        }
         idGenePair <- sample(idGenes,GenesPairNb)
       }else if(sampling=="size"){
         sizeGenes <- unique(genesLength2)
+        if(!is.null(GenesActifLengthMin)){
+          sizeGenes <- sizeGenes[which(sizeGenes>= GenesActifLengthMin)]
+        }
         sizeGenesPair <- sample(sizeGenes, GenesPairNb, replace = TRUE)
         selection <- selectGenesBySize(sizeGenesPair, genesNames2, genesLength2)
         idGenePair <- selection$idSelectedGenes
@@ -272,6 +314,7 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
     }
     
   }else{
+    
     # With GenesRemainNb 
     if(GenesRemainNb == 0){
       idGeneRemain <- NULL
@@ -280,12 +323,20 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
     }else{
       if(sampling=="gene"){
         idGenes <- seq(length(genesNames3))
+        if(!is.null(GenesLengthMin)){
+          idSmallGenes <- which(genesLength3< GenesLengthMin)
+          idGenes <- idGenes[-idSmallGenes]
+        }
         idGeneRemain <- sample(idGenes,GenesRemainNb)
       }else if(sampling=="size"){
         sizeGenes <- unique(genesLength3)
-        sizeGenesRemain <- sample(sizeGenes, GenesPairNb, replace = TRUE)
+        if(!is.null(GenesLengthMin)){
+          sizeGenes <- sizeGenes[which(sizeGenes>= GenesLengthMin)]
+        }
+        sizeGenesRemain <- sample(sizeGenes, GenesRemainNb, replace = TRUE)
         selection <- selectGenesBySize(sizeGenesRemain, genesNames3, genesLength3)
         idGeneRemain <- selection$idSelectedGenes
+        
       }
       GeneRemain <- genesNames3[idGeneRemain]
       sizeGenesRemain <- genesLength3[idGeneRemain]
@@ -303,7 +354,13 @@ simGenoDataR <- function(data, listGenesData, GenesMainNb, GenesPairNb, GenesRem
   
   sizeGenes <- list(sizeGenesMain=sizeGenesMain,sizeGenesPair=sizeGenesPair,sizeGenesRemain=sizeGenesRemain)
   
-  list(X=X, listGenesSNP=listGenesSNP, MainEff=MainEff, GenePair=GenePair, GeneRemain=GeneRemain, sizeGenes=sizeGenes)	
+  MAFobs <- apply(X, 2, function(x) (table(x)[2] + 2 * table(x)[3])/(dim(X)[1] * 2))
+  names(MAFobs) <- as.vector(unlist(listGenesSNP))
+  
+  
+  
+  list(X=X, listGenesSNP=listGenesSNP, MainEff=MainEff, GenePair=GenePair, GeneRemain=GeneRemain, sizeGenes=sizeGenes, 
+       MAF = MAFobs)	
   
 }
 
@@ -687,3 +744,151 @@ simPhenoWE <- function(data, listGenesData, listGenesRemain, r2 = 0.2, causalSNP
   
   list(y = as.matrix(y), G = G, GG = GG, R2T = R2T, R2I = R2I, R2S = R2S, caract = caract)
   }
+
+
+
+
+#' Fonction to simulate phenotype values as in GGI package
+simPhenoGGI <- function(X, listGenes, GenePair, PairCausalSNPnb, beta0 = 0, tau=2) {
+  
+  if (length(GenePair)%%2 == 1) {
+    print("The number of gene in GenePair has to be an even number")
+  }
+  
+  nbGenePair <- length(GenePair)/2
+  nbGeneInt <- length(GenePair)
+  nbSNPparGeneEnInter <- sapply(GenePair, function(x) length(listGenes[[x]]))
+  genes <- names(listGenes)
+  GeneRemain <- genes[-which(genes%in%GenePair)]
+  nbSNPparGeneRemain <- sapply(GeneRemain, function(x) length(listGenes[[x]]))
+  N <- dim(X)[1]
+  
+  if (is.null(GenePair)) {
+    NamesCausalSNP_I <- NULL
+    GG <- matrix(0, nrow = N)
+    gamma <- c(0)
+    
+  } else {
+    # Gene Pair effect
+    GenePair2 <- matrix(GenePair, ncol = 2, byrow = TRUE)
+    GenePair2 <- apply(GenePair2, 1, function(x) paste("X", x[1], x[2], sep = "."))
+    
+    
+    
+    NamesCausalSNP_I <- sapply(GenePair, function(x) SNPinGene(x, nbSNPcausaux=PairCausalSNPnb, 
+                                                               listGenes=listGenes))
+    if (is.matrix(NamesCausalSNP_I)) {
+      isMat <- TRUE
+      m <- NamesCausalSNP_I
+      NamesCausalSNP_I = as.list(data.frame(NamesCausalSNP_I))
+    } else {
+      isMat <- FALSE
+    }
+    
+    GG <- matrix(, nrow = N)
+    gamma <- c()
+    for (i in seq(1:(nbGeneInt/2)) * 2 - 1) {
+      X1 <- as.matrix(X[, as.character(NamesCausalSNP_I[[i]])])
+      X2 <- as.matrix(X[, as.character(NamesCausalSNP_I[[i + 1]])])
+      X3 <- matrix(0)
+      for (j in seq(dim(X1)[2])) {
+        SNP1 <- X1[, j]
+        SNP2 <- X2[, j]
+        prod <- data.frame(SNP1 * SNP2)
+        colnames(prod) <- paste("pair", i, i+1, "snp", j, j, sep = ".")
+        X3 <- cbind(X3, prod)
+        
+        tSNP1 <- table(SNP1)
+        tSNP2 <- table(SNP2)
+        
+        if(length(unique(SNP1))==2){
+          namestSNP1 <- names(tSNP1)
+          
+          alelePres <- unique(SNP1)
+          aleleMiss <-  which(c(1,2,3) %in% alelePres==FALSE)
+          
+          t2SNP1 <- matrix(nrow = 1, ncol = 3)
+          t2SNP1[,as.numeric(namestSNP1[1])] <-  tSNP1[namestSNP1[1]]
+          t2SNP1[,as.numeric(namestSNP1[2])] <-  tSNP1[namestSNP1[2]]
+          t2SNP1[,aleleMiss] <- 0
+          colnames(t2SNP1) <- c(1,2,3)
+          
+          MAF1 <- (t2SNP1[2] + 2 * t2SNP1[3])/(N * 2) 
+          
+          }else{
+          MAF1 <- (tSNP1[2] + 2 * tSNP1[3])/(N * 2) 
+          }
+        
+
+        if(length(unique(SNP2))==2){
+          namestSNP2 <- names(tSNP2)
+          
+          alelePres <- unique(SNP2)
+          aleleMiss <-  which(c(1,2,3) %in% alelePres==FALSE)
+          
+          t2SNP2 <- matrix(nrow = 1, ncol = 3)
+          t2SNP2[,as.numeric(namestSNP2[1])] <-  tSNP2[namestSNP2[1]]
+          t2SNP2[,as.numeric(namestSNP2[2])] <-  tSNP2[namestSNP2[2]]
+          t2SNP2[,aleleMiss] <- 0
+          colnames(t2SNP2) <- c(1,2,3)
+          
+          MAF2 <- (t2SNP2[2] + 2 * t2SNP2[3])/(N * 2) 
+          
+        }else{
+          MAF2 <- (tSNP2[2] + 2 * tSNP2[3])/(N * 2) 
+        }
+        
+        MAF1 <- min(MAF1, 1 - MAF1)
+        MAF2 <- min(MAF2, 1 - MAF2)
+        
+        gamma_jj <- log(tau)/16 * abs(log10(MAF1 * MAF2 ))
+        names(gamma_jj) <- paste("pair", i, i+1, "snp", j, j, sep = ".") 
+        gamma <- c(gamma, gamma_jj)
+        
+      }
+      GG <- cbind(GG, X3[,-1])
+    }
+    GG <- as.matrix(GG[, -1])
+    
+     
+    
+    #GG <- scale(GG, center = TRUE, scale = TRUE)
+    #gamma <- replicate(nbGenePair, sample(pvGamma, 1))
+    
+    #names(gamma) <- GenePair2
+    #colnames(GG) <- GenePair2
+    
+    if(isMat==FALSE){
+      caI<-NamesCausalSNP_I 
+      max <- max(sapply(caI, function(x) length(x)))
+      m <- matrix(ncol=length(caI),nrow=max)
+      colnames(m) <- names(caI)
+      for(i in seq(length(caI))){
+        m[1:length(caI[[i]]),i]<- unlist(caI[i])
+      }
+    }
+    NamesCausalSNP_I <- m
+    
+  }
+  
+  
+  #y binaire
+  y.ex <- beta0 + GG %*% gamma 
+  prob<- exp(y.ex)/(1+exp(y.ex))
+  y <- sapply(prob, function(x) rbinom(1,1,x)) 
+  
+  nullmod <- glm(y~1, family="binomial")
+  modI <- glm(y ~ GG - 1, family=binomial(link='logit'))
+  
+  #McFadden Pseudo-R-squared
+  R2I <- 1-logLik(modI)/logLik(nullmod) 
+  
+  
+  
+  list(y = as.matrix(y), GG = GG, R2I = R2I, prob=prob,
+       caract = list(GenePair = GenePair, nbSNPbyInterGene = nbSNPparGeneEnInter, 
+                     Coef_GenePair = gamma, causalSNPInter = NamesCausalSNP_I, GeneRemain=GeneRemain, 
+                     nbSNPparGeneRemain=nbSNPparGeneRemain, beta0 = beta0, 
+                     PairCausalSNPnb=PairCausalSNPnb, tau=tau))
+}
+

@@ -164,7 +164,7 @@ RF <- function(X, Y, listGenesSNP, idSubs) {
 
 
 
-SVMmet <- function(X, Y, listGenesSNP, kernel, degree=3) {
+SVMmet <- function(X, Y, listGenesSNP, kernel, degree=3, idSubs) {
   
   genes <- names(listGenesSNP)
   
@@ -240,7 +240,7 @@ SVMmet <- function(X, Y, listGenesSNP, kernel, degree=3) {
 
 
 
-BOOST <- function(X, Y, listGenesSNP) {
+BOOST <- function(X, Y, listGenesSNP, idSubs) {
   
   genes <- names(listGenesSNP)
   
@@ -298,7 +298,7 @@ BOOST <- function(X, Y, listGenesSNP) {
 
 
 
-NN <- function(X, Y, listGenesSNP) {
+NN <- function(X, Y, listGenesSNP, idSubs) {
   
   genes <- names(listGenesSNP)
   
