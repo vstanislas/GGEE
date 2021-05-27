@@ -2,11 +2,11 @@
 title: "GGEE Vignette"
 author: "Virginie Stanislas"
 date: "`r Sys.Date()`"
-output: pdf_document
-vignette: >
-  %\VignetteIndexEntry{GGEEVignette}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+output:
+  html_document:
+    df_print: paged
+vignette: |
+  %\VignetteIndexEntry{GGEEVignette} %\VignetteEngine{knitr::rmarkdown} %\VignetteEncoding{UTF-8}
 ---
 ## 1) Introduction
 The `GGEE` package implements the "Gene-Gene Eigen Epistasis" approach to detect epistasis at the gene level in genome wide association studies (GWAS). 
@@ -126,7 +126,7 @@ Four different methods can be use to create interaction variables :
 Here we show an example using `"GGEE"`option. As this method can compute only one interaction by gene couple, the parameter `nbcomp` doesn't need to be used. 
 
 ```{r}
-# Distribution of the samples in tre training or test set:
+# Distribution of the samples in training or test set:
 n <- dim(Geno$X)[1]
 portionTrain <- 1/2
 idTrain <- sample(1:n, size=n*portionTrain)
