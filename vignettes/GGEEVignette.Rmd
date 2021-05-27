@@ -2,7 +2,7 @@
 title: "GGEE Vignette"
 author: "Virginie Stanislas"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: pdf_document
 vignette: >
   %\VignetteIndexEntry{GGEEVignette}
   %\VignetteEngine{knitr::rmarkdown}
@@ -111,7 +111,12 @@ Pheno$caract
 ## 3) The G-GEE method
 Once genotype and phenotype data are obtained we can apply the G-GEE approach to seek for interaction effects. The first step is to create interaction variables from each gene couple, the second is to test for potential main or interaction effects.
 
-Interaction variable modeling can be done with the function `BuiltEpiVar`. The function takes as parameters the matrix of genotype $X$, the vector of phenotypic traits $y$, a list `listGenesSNP`  that indicate the names of the SNPs composing each gene and `nbcomp` the number of components to consider to compute interaction variables. Four different methods can be use to create interaction variables :
+Interaction variable modeling can be done with the function `BuiltEpiVar`. The function takes as parameters the matrix of genotype $X$, the vector of phenotypic traits $y$, a list `listGenesSNP`  that indicate the names of the SNPs composing each gene and `nbcomp` the number of components to consider to compute interaction variables. 
+
+Subjects need to be randomly divided into two equal-sized sets for training and testing. The training group is used to construct the interaction variables and to estimate the Group LASSO coefficients. The test group is used for the cleaning step to compute the permuted p-values. 
+`idSubs` is a list containing the indices of the samples used in the test or training set.
+
+Four different methods can be use to create interaction variables :
 
 * `"GGEE"` which find for each gene pair its Eigen-epistasis Component that maximize the correlation between all possible SNP-SNP interactions and the phenotype. 
 * `"PCA"` which first compute PCA on each gene of the pair and represent the interaction with component products.
@@ -121,13 +126,22 @@ Interaction variable modeling can be done with the function `BuiltEpiVar`. The f
 Here we show an example using `"GGEE"`option. As this method can compute only one interaction by gene couple, the parameter `nbcomp` doesn't need to be used. 
 
 ```{r}
-Int <- BuiltEpiVar(Geno$X, Pheno$y, method="GGEE", listGenesSNP=Geno$listGenesSNP)
+# Distribution of the samples in tre training or test set:
+n <- dim(Geno$X)[1]
+portionTrain <- 1/2
+idTrain <- sample(1:n, size=n*portionTrain)
+idTest <- (1:n)[-idTrain]
+idSubs <- list(idTrain=idTrain[order(idTrain)], idTest=idTest)
+
+
+Int <- BuiltEpiVar(Geno$X, Pheno$y, method="GGEE", listGenesSNP=Geno$listGenesSNP, idSubs=idSubs)
 ```
 
-`Int` is a list composed of the interaction variable matrix `XBet` and a vector `interLength` indicating the number of interaction variables for each couple.
+`Int` is a list composed of the interaction variable matrices (`XIntTrain` and `XIntTest`) and a vector `interLength` indicating the number of interaction variables for each couple.
 
 ```{r}
-head(Int$XBet)
+head(Int$XIntTrain)
+head(Int$XIntTest)
 Int$interLength
 
 ```
@@ -135,9 +149,9 @@ Int$interLength
 Test for potential main or interaction effects is done with the function `GLmodel`. Parameters include `nlambda`, the length of the grid of possible lambda values, `limitLambda` the number of the largest lambda values among the grid to consider for the cross validation and `lambda.cri` the criteria for lambda selection (minimum or oneSE value).
 
 ```{r}
-res <- GLmodel(Geno$X, Pheno$y, Int$XBet, interLength=Int$interLength,
-     listGenesSNP=Geno$listGenesSNP, nlambda=100, limitLambda=25, lambda.cri="min")
-
+res <- GLmodel(Geno$X, Pheno$y, XIntTrain=Int$XIntTrain, XIntTest=Int$XIntTest,  idSubs =idSubs, 
+               interLength=Int$interLength, listGenesSNP=Geno$listGenesSNP, nlambda=100,
+               limitLambda=25, lambda.cri="min")
 ```
 
 The outputs of `GLmodel` contain:

@@ -2,7 +2,8 @@
 #' Fonction to create interaction variable. 
 #'
 #' The fonction create interaction variable from a genetic data set structured by group. 
-#'
+#' Interaction variables are computed using the first half of the samples (training set). 
+#' The values of the interaction variables for the second half of the samples are then predicted.
 #' @param X a genotype matrix where columns are genetic markers and rows are samples. 
 #' @param Y phenotype values can be logical (1/0) or numericGLmodel.
 #' @param method method to consider for interactions variable  construction :
@@ -13,11 +14,14 @@
 #' \item{"CCA":}{ Compute the gene-gene interaction variables for a given gene pair with Canonical Correlation Analysis.}
 #' }
 #' @param listGenesSNP list containing the names of genetic marker for each group.
+#' @param idSubs list containing the indices of the samples used for training ($idTrain) or testing ($idTest). 
 #' @param nbcomp number of components to consider to built interaction variables for "PCA", "PLS" and "CCA" methods (2 by default).
 # @param seuilVarPCA an optional threshold of percentage of variance for the "PCA" method, if noticed the interaction variables are built with the PCA component that explain at least this threshold.
 #' @return Returns a list including:
-#' \item{XInt}{a matrix where columns are interaction variables and rows are samples.}
+#' \item{XIntTrain} {a matrix where columns are interaction variables and rows are the training samples.}
+#' \item{XIntTest} {a matrix where columns are interaction variables and rows are the test samples.}
 #' \item{interLength}{a vector that indicate the number of interaction variable for each gene couple.}
+#' \item{nb_int} {total number of pairwise (SNPxSNP) interaction variables computed.}
 #' @export
 BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2, idSubs) {
  
@@ -108,11 +112,15 @@ BuiltEpiVar <- function(X, Y, method, listGenesSNP, nbcomp =2, idSubs) {
 
 #' Fonction to add interaction variable and to fit a group lasso model.
 #'
-#' The GLmodel fonction first add interaction variable to a genetic data set structured by group and then fit a group lasso model with an adaptive ridge cleaning approach.
-#'
+#' The GLmodel fonction first add interaction variable to a genetic data set structured by group and then 
+#' fit a group lasso model with an adaptive ridge cleaning approach.
+#' Estimation of the Group LASSO coefficients are computed on the training set of the samples.
+#' The testing set of the sample is used for the cleaning stage to compute permuted p-values for each group.
 #' @param X a genotype matrix where columns are genetic markers and rows are samples. 
 #' @param Y phenotype values can be logical (1/0) or numericGLmodel.
-#' @param XBet a matrix where columns are interaction variables and rows are samples.
+#' @param XIntTrain a matrix where columns are interaction variables and rows are the training samples.
+#' @param XIntTest a matrix where columns are interaction variables and rows are the test samples.
+#' @param idSubs list containing the indices of the samples used for training ($idTrain) or testing ($idTest). 
 #' @param interLength a vector that indicate the number of interaction variable for each gene couple.
 #' @param listGenesSNP list containing the names of genetic marker for each group.
 #' @param nlambda length of the grid of lambda values (100 by default).
