@@ -2,6 +2,9 @@
 #include <vector>
 #include <iostream>
 
+// [[Rcpp::plugins(cpp11)]]
+
+
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
