@@ -37,7 +37,7 @@ GGEE <- function(X, Y, listGenesSNP, idSubs) {
       
       A <- t(W_tr) %*% Y_tr
       A <-as.vector(A)
-      u <- A/sqrt(A%*%A) 
+      u <- A/c(sqrt(A%*%A))
       #u <- A/sqrt(sum(A^2)) 
       
       z_tr <- W_tr %*% u
