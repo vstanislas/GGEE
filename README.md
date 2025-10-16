@@ -1,7 +1,7 @@
 # GGEE
 
 
-GGEE implements the group lasso Gene-Gene Eigen Epistasis (G-GEE) method for detecting epistasis at the gene level (publication: https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-017-1488-0). The proposed functions allow to compute interaction variables for each pair and to fit a general model with a Group Lasso penalty. The package allows to generate gene structured genotype data and continuous phenotype.
+GGEE implements the group lasso Gene-Gene Eigen Epistasis (G-GEE) method for detecting epistasis at the gene level (publication: https://doi.org/10.1186/s12859-017-1488-0). The proposed functions allow to compute interaction variables for each pair and to fit a general model with a Group Lasso penalty. The package allows to generate gene structured genotype data and continuous phenotype.
 
 
 ## Installation
